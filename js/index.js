@@ -1,5 +1,5 @@
 var fecha=' '
-apiClima='https://api.open-meteo.com/v1/forecast?latitude=-54.8019&longitude=-68.303&hourly=temperature_2m,apparent_temperature,precipitation,showers,windspeed_10m&timezone=America%2FSao_Paulo'
+apiClima='https://api.open-meteo.com/v1/forecast?latitude=-54.8019&longitude=-68.303&hourly=temperature_2m,apparent_temperature,precipitation,showers,cloudcover,windspeed_10m&current_weather=true'
 
 dayjs.locale('es')
 // Si es el día de la fecha, utiliza un formato animado. De lo contrario usa un estático.
@@ -9,38 +9,53 @@ const iconoClima=(hora,clima)=>{
     let diaNoche=(parseInt(dayjs(hora).format('HH'))>=20|| parseInt(dayjs(hora).format('HH'))<=6)? '-night' : '-day'
     return `<img src="resources/${tipoImagen}/${clima}${diaNoche}.svg" width="100" height="100">`
 }
-const evaluaLluvia=(lluvia,hora)=>{
+
+const textoClima=(texto)=>{
+    return `<p class="fw-bolder">${texto}</p>`
+}
+
+const evaluaLluvia=(lluvia,nubosidad,hora)=>{
     if (lluvia>0 && lluvia<2) {
-        return `${iconoClima(hora,'rainy-1')} <p>Lluvias leves</p>`
+        return `${iconoClima(hora,'rainy-1')} ${textoClima('Lluvias leves')}`
     }else if (lluvia>=2 && lluvia<15){
-        return `${iconoClima(hora,'rainy-2')} <p>Lluvia</p>`
+        return `${iconoClima(hora,'rainy-2')} ${textoClima('Lluvia')}`
     }else if (lluvia>=15 && lluvia<30 ) {
-        return `${iconoClima(hora,'rainy-3')} <p>Lluvias fuertes</p>`
+        return `${iconoClima(hora,'rainy-3')} ${textoClima('Lluvias fuertes')}`
     }else if(lluvia>=30 && lluvia<60){
-        return `${iconoClima(hora,'rainy-3')} <p>Lluvias muy fuertes</p>`
+        return `${iconoClima(hora,'rainy-3')} ${textoClima('Lluvias muy fuertes')}`
     }else if (lluvia>=60){
-        return `${iconoClima(hora,'scattered-thunderstorms')} <p>Lluvias torrenciales</p>`
+        return `${iconoClima(hora,'scattered-thunderstorms')} ${textoClima('Lluvias torrenciales')}`
     }else{
-        return `${iconoClima(hora,'clear')} <p>Sin lluvias</p>`
+        if (nubosidad>=70) {
+            return `${iconoClima(hora,'cloudy-3')} ${textoClima('Nublado')}`
+        }else if (nubosidad>=40 && nubosidad<70){
+            return `${iconoClima(hora,'cloudy-2')} ${textoClima('Mayormente nublado')}`
+        }else if (nubosidad>=5 && nubosidad<40){
+            return `${iconoClima(hora,'cloudy-1')} ${textoClima('Parcialmente nublado')}`
+        } else{
+            return `${iconoClima(hora,'clear')} ${textoClima('Despejado')}`
+        }
     }
 }
 
-const tarjeta =(temperatura, tiempo, sensacionTermica,precipitacion, lluvia, viento, unidades)=>{
+const tarjeta =(temperatura, tiempo, sensacionTermica,precipitacion, lluvia, viento,nubosidad, unidades)=>{
     // inicializa variable
     let htmlTarjeta=` `
     // Si el día (sin la hora), es distinto al que se recibe por parámetro () entonces se crea un encabezado para la fecha
     if ( dayjs(tiempo).format('YYYYMMDD')!=dayjs(fecha).format('YYYYMMDD') ){
         fecha=tiempo
         let fechaFormateada=dayjs(tiempo).format('dddd DD')+' de '+dayjs(tiempo).format('MMMM')
-        htmlTarjeta+=`<div class="col-sm-12"><h2>${fechaFormateada}</h2></div>`
+        htmlTarjeta+=`
+            <hr><hr>
+            <div class="col-sm-12"><h2 class="text-white">${fechaFormateada}</h2></div>`
     }
 
     // estilos para la tarjeta
     htmlTarjeta+= `
-    <div class="col-sm-4 col-lg-2 card">
+    <div class="col-sm-4 col-lg-2 card" style="background-color: hsl(235, 20%, 65%)">
         <div class="card-body">
             <h5 class="card-title">${dayjs(tiempo).format('HH:mm')}</h5>
-            <h6>${evaluaLluvia(lluvia,tiempo)}</h6>
+            <h6>${evaluaLluvia(lluvia,nubosidad,tiempo)}</h6>
             <h6>Temperatura: ${temperatura}${unidades.temperature_2m}</h6> 
             <h6>Sens. térmica: ${sensacionTermica}${unidades.apparent_temperature} </h6>
             <h6>Viento: ${viento}${unidades.windspeed_10m} </h6>
@@ -76,7 +91,7 @@ const generaPlantilla= (datosHora, unidades)=>{
         if (parseInt(dayjs(datosHora.time[i]).format('YYYYMMDDHH')) >= parseInt(dayjs().format('YYYYMMDDHH')) ) {
             // console.log( parseInt(dayjs(datosHora.time[i]).format('YYYYMMDDHH'))+4 );
             // dayjs(datosHora.time[i]).format('YYYYMMDDHH')+4
-            plantilla +=tarjeta(datosHora.temperature_2m[i],datosHora.time[i],datosHora.apparent_temperature[i],datosHora.precipitation[i],datosHora.showers[i],datosHora.windspeed_10m[i],unidades)
+            plantilla +=tarjeta(datosHora.temperature_2m[i],datosHora.time[i],datosHora.apparent_temperature[i],datosHora.precipitation[i],datosHora.showers[i],datosHora.windspeed_10m[i],datosHora.cloudcover[i],unidades)
         }
     });
 
