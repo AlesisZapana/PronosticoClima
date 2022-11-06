@@ -7,7 +7,7 @@ dayjs.locale('es')
 const iconoClima=(hora,clima)=>{
     let tipoImagen=dayjs(hora).format('YYMMDD')==dayjs().format('YYMMDD') ? 'animated' :'static'
     let diaNoche=(parseInt(dayjs(hora).format('HH'))>=20|| parseInt(dayjs(hora).format('HH'))<=6)? '-night' : '-day'
-    return `<img src="resources/${tipoImagen}/${clima}${diaNoche}.svg">`
+    return `<img src="resources/${tipoImagen}/${clima}${diaNoche}.svg" width="100" height="100">`
 }
 const evaluaLluvia=(lluvia,hora)=>{
     if (lluvia>0 && lluvia<2) {
